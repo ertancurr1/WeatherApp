@@ -6,7 +6,8 @@ import {
   ScrollView,
   useColorScheme,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomInput from "../src/components/CustomInput";
 import SearchButton from "../src/components/SearchButton";
@@ -24,6 +25,13 @@ export default function HomeScreen() {
     // Load previous searches when component mounts
     loadPreviousSearches();
   }, []);
+
+  // Clear input when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setCityName("");
+    }, [])
+  );
 
   // Function to load previous searches from AsyncStorage
   const loadPreviousSearches = async () => {

@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Platform,
   StatusBar,
+  SafeAreaView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -65,12 +66,14 @@ export default function WeatherScreen() {
   // Handle loading state
   if (isLoadingCurrent || isLoadingForecast) {
     return (
-      <LoadingIndicator message={`Loading weather for ${decodedCity}...`} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: getBackgroundColor() }}>
+        <LoadingIndicator message={`Loading weather for ${decodedCity}...`} />
+      </SafeAreaView>
     );
   }
 
   // Get background color based on weather condition
-  const getBackgroundColor = () => {
+  function getBackgroundColor() {
     const weatherMain = currentWeather?.weather?.[0]?.main;
 
     // Define colors for different weather conditions
@@ -87,7 +90,7 @@ export default function WeatherScreen() {
     };
 
     return colors[weatherMain] || (isDark ? "#1a1a1a" : "#42a5f5");
-  };
+  }
 
   // Handle the back button press
   const handleBack = () => {
@@ -95,128 +98,132 @@ export default function WeatherScreen() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: getBackgroundColor() }]}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={handleBack}
-        activeOpacity={0.7}
+    <SafeAreaView style={{ flex: 1, backgroundColor: getBackgroundColor() }}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: getBackgroundColor() }]}
+        contentContainerStyle={styles.contentContainer}
       >
-        <Text style={styles.backButtonText}>← Back</Text>
-      </TouchableOpacity>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBack}
+          activeOpacity={0.7}
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
 
-      {/* City Name and Date */}
-      <View style={styles.header}>
-        <Text style={styles.cityName}>
-          {currentWeather?.name}, {currentWeather?.sys?.country}
-        </Text>
-        <Text style={styles.date}>{formatDate(currentWeather?.dt)}</Text>
-      </View>
-
-      {/* Current Weather */}
-      <View style={styles.currentWeatherContainer}>
-        <View style={styles.currentWeatherMain}>
-          {/* Weather Icon */}
-          {currentWeather?.weather?.[0]?.icon && (
-            <Image
-              source={{
-                uri: getWeatherIconUrl(currentWeather.weather[0].icon, 4),
-              }}
-              style={styles.weatherIcon}
-            />
-          )}
-
-          {/* Temperature */}
-          <Text style={styles.temperature}>
-            {formatTemperature(currentWeather?.main?.temp)}
+        {/* City Name and Date */}
+        <View style={styles.header}>
+          <Text style={styles.cityName}>
+            {currentWeather?.name}, {currentWeather?.sys?.country}
           </Text>
-
-          {/* Weather Description */}
-          <Text style={styles.weatherDescription}>
-            {currentWeather?.weather?.[0]?.description}
-          </Text>
-
-          {/* Hi-Lo Temperatures */}
-          <Text style={styles.hiLoTemp}>
-            H: {formatTemperature(currentWeather?.main?.temp_max, false)} L:{" "}
-            {formatTemperature(currentWeather?.main?.temp_min, false)}
-          </Text>
+          <Text style={styles.date}>{formatDate(currentWeather?.dt)}</Text>
         </View>
 
-        {/* Weather Details */}
-        <View style={styles.weatherDetails}>
-          {WEATHER_INFO.map((info, index) => {
-            let value;
-            if (info.valueKey && info.key === "windSpeed") {
-              value = currentWeather?.wind?.[info.valueKey];
-            } else {
-              value =
-                currentWeather?.main?.[info.key] || currentWeather?.[info.key];
-            }
+        {/* Current Weather */}
+        <View style={styles.currentWeatherContainer}>
+          <View style={styles.currentWeatherMain}>
+            {/* Weather Icon */}
+            {currentWeather?.weather?.[0]?.icon && (
+              <Image
+                source={{
+                  uri: getWeatherIconUrl(currentWeather.weather[0].icon, 4),
+                }}
+                style={styles.weatherIcon}
+              />
+            )}
 
-            if (info.divideBy && value) {
-              value = (value / info.divideBy).toFixed(1);
-            }
+            {/* Temperature */}
+            <Text style={styles.temperature}>
+              {formatTemperature(currentWeather?.main?.temp)}
+            </Text>
 
-            return (
-              <View key={index} style={styles.detailItem}>
-                <Text style={styles.detailLabel}>{info.label}</Text>
-                <Text style={styles.detailValue}>
-                  {value !== undefined ? `${value} ${info.unit}` : "--"}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
+            {/* Weather Description */}
+            <Text style={styles.weatherDescription}>
+              {currentWeather?.weather?.[0]?.description}
+            </Text>
 
-      {/* Sunrise and Sunset */}
-      <View style={styles.sunTimesContainer}>
-        <View style={styles.sunTimeItem}>
-          <Text style={styles.sunTimeLabel}>Sunrise</Text>
-          <Text style={styles.sunTimeValue}>
-            {formatTime(currentWeather?.sys?.sunrise)}
-          </Text>
-        </View>
-        <View style={styles.sunTimeItem}>
-          <Text style={styles.sunTimeLabel}>Sunset</Text>
-          <Text style={styles.sunTimeValue}>
-            {formatTime(currentWeather?.sys?.sunset)}
-          </Text>
-        </View>
-      </View>
+            {/* Hi-Lo Temperatures */}
+            <Text style={styles.hiLoTemp}>
+              H: {formatTemperature(currentWeather?.main?.temp_max, false)} L:{" "}
+              {formatTemperature(currentWeather?.main?.temp_min, false)}
+            </Text>
+          </View>
 
-      {/* Daily Forecast */}
-      {dailyForecast.length > 0 && (
-        <View style={styles.forecastContainer}>
-          <Text style={styles.forecastTitle}>5-Day Forecast</Text>
-          <View style={styles.forecastList}>
-            {dailyForecast.map((item, index) => (
-              <View key={index} style={styles.forecastItem}>
-                <Text style={styles.forecastDay}>{item.day}</Text>
-                {item.weather?.icon && (
-                  <Image
-                    source={{ uri: getWeatherIconUrl(item.weather.icon) }}
-                    style={styles.forecastIcon}
-                  />
-                )}
-                <View style={styles.forecastTemp}>
-                  <Text style={styles.forecastTempHigh}>
-                    {formatTemperature(item.temp_max, false)}
-                  </Text>
-                  <Text style={styles.forecastTempLow}>
-                    {formatTemperature(item.temp_min, false)}
+          {/* Weather Details */}
+          <View style={styles.weatherDetails}>
+            {WEATHER_INFO.map((info, index) => {
+              let value;
+              if (info.valueKey && info.key === "windSpeed") {
+                value = currentWeather?.wind?.[info.valueKey];
+              } else {
+                value =
+                  currentWeather?.main?.[info.key] ||
+                  currentWeather?.[info.key];
+              }
+
+              if (info.divideBy && value) {
+                value = (value / info.divideBy).toFixed(1);
+              }
+
+              return (
+                <View key={index} style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>{info.label}</Text>
+                  <Text style={styles.detailValue}>
+                    {value !== undefined ? `${value} ${info.unit}` : "--"}
                   </Text>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
-      )}
-    </ScrollView>
+
+        {/* Sunrise and Sunset */}
+        <View style={styles.sunTimesContainer}>
+          <View style={styles.sunTimeItem}>
+            <Text style={styles.sunTimeLabel}>Sunrise</Text>
+            <Text style={styles.sunTimeValue}>
+              {formatTime(currentWeather?.sys?.sunrise)}
+            </Text>
+          </View>
+          <View style={styles.sunTimeItem}>
+            <Text style={styles.sunTimeLabel}>Sunset</Text>
+            <Text style={styles.sunTimeValue}>
+              {formatTime(currentWeather?.sys?.sunset)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Daily Forecast */}
+        {dailyForecast.length > 0 && (
+          <View style={styles.forecastContainer}>
+            <Text style={styles.forecastTitle}>5-Day Forecast</Text>
+            <View style={styles.forecastList}>
+              {dailyForecast.map((item, index) => (
+                <View key={index} style={styles.forecastItem}>
+                  <Text style={styles.forecastDay}>{item.day}</Text>
+                  {item.weather?.icon && (
+                    <Image
+                      source={{ uri: getWeatherIconUrl(item.weather.icon) }}
+                      style={styles.forecastIcon}
+                    />
+                  )}
+                  <View style={styles.forecastTemp}>
+                    <Text style={styles.forecastTempHigh}>
+                      {formatTemperature(item.temp_max, false)}
+                    </Text>
+                    <Text style={styles.forecastTempLow}>
+                      {formatTemperature(item.temp_min, false)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -226,11 +233,11 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 16 : 16,
   },
   backButton: {
     alignSelf: "flex-start",
     marginBottom: 16,
+    padding: 10,
   },
   backButtonText: {
     fontSize: 16,
