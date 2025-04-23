@@ -1,11 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchCurrentWeather, fetchForecast } from "../api/weatherApi";
+import { ERROR_MESSAGES } from "../constants";
 
 // Hook for fetching current weather
 export const useCurrentWeather = (cityName) => {
   return useQuery({
     queryKey: ["currentWeather", cityName],
-    queryFn: () => fetchCurrentWeather(cityName),
+    queryFn: async () => {
+      try {
+        return await fetchCurrentWeather(cityName);
+      } catch (error) {
+        console.error("Error fetching current weather:", error);
+        // Transform error to be more user-friendly
+        if (error.response) {
+          if (error.response.status === 401) {
+            throw new Error(ERROR_MESSAGES.API_KEY_ERROR);
+          } else if (error.response.status === 404) {
+            throw new Error(ERROR_MESSAGES.CITY_NOT_FOUND);
+          } else if (error.response.status === 429) {
+            throw new Error("Too many requests. Please try again later.");
+          }
+        } else if (error.request) {
+          throw new Error(ERROR_MESSAGES.NETWORK_ERROR);
+        }
+        throw new Error(ERROR_MESSAGES.GENERIC_ERROR);
+      }
+    },
     enabled: !!cityName, // Only run the query if cityName is provided
     retry: 1, // Only retry once on failure
   });
@@ -15,7 +35,26 @@ export const useCurrentWeather = (cityName) => {
 export const useForecast = (cityName) => {
   return useQuery({
     queryKey: ["forecast", cityName],
-    queryFn: () => fetchForecast(cityName),
+    queryFn: async () => {
+      try {
+        return await fetchForecast(cityName);
+      } catch (error) {
+        console.error("Error fetching forecast:", error);
+        // Transform error to be more user-friendly
+        if (error.response) {
+          if (error.response.status === 401) {
+            throw new Error(ERROR_MESSAGES.API_KEY_ERROR);
+          } else if (error.response.status === 404) {
+            throw new Error(ERROR_MESSAGES.CITY_NOT_FOUND);
+          } else if (error.response.status === 429) {
+            throw new Error("Too many requests. Please try again later.");
+          }
+        } else if (error.request) {
+          throw new Error(ERROR_MESSAGES.NETWORK_ERROR);
+        }
+        throw new Error(ERROR_MESSAGES.GENERIC_ERROR);
+      }
+    },
     enabled: !!cityName,
     retry: 1,
   });

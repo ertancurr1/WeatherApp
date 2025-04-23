@@ -15,6 +15,7 @@ export default function ErrorScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
+  // Use the message from URL parameters, or fall back to a generic message
   const errorMessage = message
     ? decodeURIComponent(message)
     : ERROR_MESSAGES.GENERIC_ERROR;
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 16,
     textAlign: "center",
   },
   errorMessage: {
@@ -84,6 +85,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 32,
     paddingHorizontal: 20,
+    lineHeight: 24,
   },
   button: {
     paddingVertical: 12,
