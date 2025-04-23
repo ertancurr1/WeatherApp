@@ -5,6 +5,7 @@ import {
   Text,
   ScrollView,
   useColorScheme,
+  Platform,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
@@ -90,69 +91,86 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.container,
+    <View
+      style={[
+        styles.outerContainer,
         { backgroundColor: isDark ? "#121212" : "#f0f0f0" },
       ]}
     >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: isDark ? "#ffffff" : "#000000" }]}>
-          Weather App
-        </Text>
-        <Text
-          style={[styles.subtitle, { color: isDark ? "#cccccc" : "#555555" }]}
-        >
-          Search for a city to see the weather
-        </Text>
-      </View>
-
-      <View style={styles.searchContainer}>
-        <CustomInput
-          value={cityName}
-          onChangeText={setCityName}
-          placeholder="Enter city name"
-          disabled={isLoading}
-          onSubmitEditing={handleSearch}
-        />
-        <SearchButton
-          onPress={handleSearch}
-          disabled={isLoading || !cityName.trim()}
-          isLoading={isLoading}
-        />
-      </View>
-
-      {previousSearches.length > 0 && (
-        <View style={styles.previousSearchesContainer}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          Platform.OS === "web" && styles.webContainer,
+        ]}
+      >
+        <View style={styles.header}>
           <Text
-            style={[
-              styles.previousSearchesTitle,
-              { color: isDark ? "#ffffff" : "#000000" },
-            ]}
+            style={[styles.title, { color: isDark ? "#ffffff" : "#000000" }]}
           >
-            Previous Searches
+            Weather App
           </Text>
-          <View style={styles.previousSearchesList}>
-            {previousSearches.map((city, index) => (
-              <PreviousSearchItem
-                key={index}
-                city={city}
-                onPress={() => handlePreviousSearch(city)}
-              />
-            ))}
-          </View>
+          <Text
+            style={[styles.subtitle, { color: isDark ? "#cccccc" : "#555555" }]}
+          >
+            Search for a city to see the weather
+          </Text>
         </View>
-      )}
-    </ScrollView>
+
+        <View style={styles.searchContainer}>
+          <CustomInput
+            value={cityName}
+            onChangeText={setCityName}
+            placeholder="Enter city name"
+            disabled={isLoading}
+            onSubmitEditing={handleSearch}
+          />
+          <SearchButton
+            onPress={handleSearch}
+            disabled={isLoading || !cityName.trim()}
+            isLoading={isLoading}
+          />
+        </View>
+
+        {previousSearches.length > 0 && (
+          <View style={styles.previousSearchesContainer}>
+            <Text
+              style={[
+                styles.previousSearchesTitle,
+                { color: isDark ? "#ffffff" : "#000000" },
+              ]}
+            >
+              Previous Searches
+            </Text>
+            <View style={styles.previousSearchesList}>
+              {previousSearches.map((city, index) => (
+                <PreviousSearchItem
+                  key={index}
+                  city={city}
+                  onPress={() => handlePreviousSearch(city)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+  },
   container: {
     flexGrow: 1,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
+  },
+  webContainer: {
+    maxWidth: 600,
+    width: "100%",
+    alignSelf: "center",
   },
   header: {
     alignItems: "center",
