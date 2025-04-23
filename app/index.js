@@ -1,90 +1,184 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
+  Text,
+  ScrollView,
+  useColorScheme,
 } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomInput from "../src/components/CustomInput";
+import SearchButton from "../src/components/SearchButton";
+import PreviousSearchItem from "../src/components/PreviousSearchItem";
 
 export default function HomeScreen() {
   const [cityName, setCityName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [previousSearches, setPreviousSearches] = useState([]);
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
+  useEffect(() => {
+    // Load previous searches when component mounts
+    loadPreviousSearches();
+  }, []);
+
+  // Function to load previous searches from AsyncStorage
+  const loadPreviousSearches = async () => {
+    try {
+      const savedSearches = await AsyncStorage.getItem("previousSearches");
+      if (savedSearches) {
+        setPreviousSearches(JSON.parse(savedSearches));
+      }
+    } catch (error) {
+      console.error("Error loading previous searches:", error);
+    }
+  };
+
+  // Function to save a city search to AsyncStorage
+  const saveCitySearch = async (city) => {
+    try {
+      // Save city to previous searches (avoiding duplicates and limiting to 5)
+      const updatedSearches = [
+        city,
+        ...previousSearches.filter(
+          (item) => item.toLowerCase() !== city.toLowerCase()
+        ),
+      ].slice(0, 5);
+
+      await AsyncStorage.setItem(
+        "previousSearches",
+        JSON.stringify(updatedSearches)
+      );
+      setPreviousSearches(updatedSearches);
+    } catch (error) {
+      console.error("Error saving search:", error);
+    }
+  };
+
+  // Handle the search button press
   const handleSearch = () => {
     if (cityName.trim()) {
-      // Will implement the navigation to weather screen later
-      console.log("Searching for:", cityName);
-      // Clear input
+      setIsLoading(true);
+
+      // Save the search
+      saveCitySearch(cityName.trim());
+
+      // Navigate to weather screen with city name parameter
+      router.push(`/weather/${encodeURIComponent(cityName.trim())}`);
+
+      // Reset loading state and input field
+      setIsLoading(false);
       setCityName("");
     }
   };
 
+  // Handle previous search item press
+  const handlePreviousSearch = (city) => {
+    setCityName(city);
+    router.push(`/weather/${encodeURIComponent(city)}`);
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Weather App</Text>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: isDark ? "#121212" : "#f0f0f0" },
+      ]}
+    >
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: isDark ? "#ffffff" : "#000000" }]}>
+          Weather App
+        </Text>
+        <Text
+          style={[styles.subtitle, { color: isDark ? "#cccccc" : "#555555" }]}
+        >
+          Search for a city to see the weather
+        </Text>
+      </View>
+
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.input}
+        <CustomInput
           value={cityName}
           onChangeText={setCityName}
           placeholder="Enter city name"
-          returnKeyType="search"
+          disabled={isLoading}
           onSubmitEditing={handleSearch}
         />
-        <TouchableOpacity
-          style={styles.button}
+        <SearchButton
           onPress={handleSearch}
-          disabled={!cityName.trim()}
-        >
-          <Text style={styles.buttonText}>Search</Text>
-        </TouchableOpacity>
+          disabled={isLoading || !cityName.trim()}
+          isLoading={isLoading}
+        />
       </View>
-    </View>
+
+      {previousSearches.length > 0 && (
+        <View style={styles.previousSearchesContainer}>
+          <Text
+            style={[
+              styles.previousSearchesTitle,
+              { color: isDark ? "#ffffff" : "#000000" },
+            ]}
+          >
+            Previous Searches
+          </Text>
+          <View style={styles.previousSearchesList}>
+            {previousSearches.map((city, index) => (
+              <PreviousSearchItem
+                key={index}
+                city={city}
+                onPress={() => handlePreviousSearch(city)}
+              />
+            ))}
+          </View>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
   },
+  header: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 32,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: "center",
   },
   searchContainer: {
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 20,
   },
-  input: {
-    flex: 1,
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    marginRight: 10,
-    backgroundColor: "#ffffff",
+  previousSearchesContainer: {
+    width: "100%",
+    marginTop: 20,
   },
-  button: {
-    height: 50,
-    width: 100,
-    backgroundColor: "#007bff",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
+  previousSearchesTitle: {
+    fontSize: 18,
     fontWeight: "600",
+    marginBottom: 10,
+  },
+  previousSearchesList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+    width: "100%",
   },
 });
